@@ -1,0 +1,579 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Framework: AI for Maritime Vessel Classification</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Chosen Palette: Oceanic Neutrals -->
+    <!-- Application Structure Plan: A thematic, single-page application designed for progressive discovery. The user starts with a high-level introduction, then explores the core 'Classification Challenge' through interactive tabs. This is followed by a visual comparison of 'Data Sources' (AIS vs. SAR). The user then flows into an interactive diagram of the 'AI/ML Pipeline', making the process understandable. The core interactive element is the 'Ship Dimension Explorer', a filterable scatter plot to visualize ship data directly. This is followed by a 'Model Performance' dashboard and the 'Implementation Roadmap'. This structure was chosen to transform a dense report into an intuitive journey, moving from the 'why' (the challenge), to the 'how' (data and models), to the 'what' (interactive data), and finally the 'what's next' (roadmap), which is a more logical and engaging user flow than a linear document. -->
+    <!-- Visualization & Content Choices: 
+        - Taxonomies: Report Info -> Multiple classification systems. Goal -> Organize/Inform. Viz -> Tabbed content blocks. Interaction -> Click to switch views. Justification -> Prevents overwhelming users, allows focused learning. Method -> HTML/JS.
+        - Data Sources: Report Info -> AIS vs. SAR comparison. Goal -> Compare. Viz -> Side-by-side cards. Interaction -> Static display for clarity. Justification -> Highlights the trust vs. verification duality effectively. Method -> HTML/Tailwind.
+        - AI Pipeline: Report Info -> Multi-stage process from data to model. Goal -> Organize/Inform. Viz -> Interactive flowchart diagram. Interaction -> Click stage to see details. Justification -> Simplifies a complex workflow into an understandable, explorable process. Method -> HTML/JS.
+        - Ship Dimensions (Table 1): Report Info -> Table of ship lengths/breadths. Goal -> Relationships/Compare. Viz -> Scatter Plot. Interaction -> Filter by class, hover for details. Justification -> Makes abstract data tangible and allows for visual discovery of patterns. Library -> Chart.js.
+        - Model Performance (Table 4): Report Info -> Benchmark table. Goal -> Compare. Viz -> Bar Chart. Interaction -> Select model to view metrics. Justification -> Provides a clear, direct comparison of model effectiveness. Library -> Chart.js.
+        - All visual elements are built with standard HTML/CSS or Chart.js canvas, adhering to the NO SVG/Mermaid constraint. -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8fafc; /* slate-50 */
+            color: #1e293b; /* slate-800 */
+        }
+        .nav-link {
+            transition: color 0.3s ease;
+            position: relative;
+            padding-bottom: 4px;
+        }
+        .nav-link::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 0;
+            height: 2px;
+            background-color: #0ea5e9; /* sky-500 */
+            transition: width 0.3s ease;
+        }
+        .nav-link:hover::after, .nav-link.active::after {
+            width: 100%;
+        }
+        .tab-button.active {
+            border-color: #0ea5e9; /* sky-500 */
+            background-color: #0ea5e9;
+            color: white;
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 900px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 350px;
+            max-height: 60vh;
+        }
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 500px;
+            }
+        }
+        .pipeline-stage {
+            cursor: pointer;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        .pipeline-stage:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+        }
+        .pipeline-stage.active {
+            transform: translateY(-2px);
+            box-shadow: 0 0 0 3px #0ea5e9;
+        }
+    </style>
+</head>
+<body class="antialiased">
+
+    <!-- Header & Navigation -->
+    <header class="bg-white/80 backdrop-blur-md sticky top-0 z-50 shadow-sm">
+        <nav class="container mx-auto px-6 py-4 flex justify-between items-center">
+            <h1 class="text-xl font-bold text-slate-900">Maritime AI Framework</h1>
+            <div class="hidden md:flex items-center space-x-8">
+                <a href="#challenge" class="nav-link text-slate-600 hover:text-sky-600">The Challenge</a>
+                <a href="#data" class="nav-link text-slate-600 hover:text-sky-600">Data Sources</a>
+                <a href="#pipeline" class="nav-link text-slate-600 hover:text-sky-600">AI Pipeline</a>
+                <a href="#explorer" class="nav-link text-slate-600 hover:text-sky-600">Ship Explorer</a>
+                <a href="#performance" class="nav-link text-slate-600 hover:text-sky-600">Performance</a>
+                <a href="#roadmap" class="nav-link text-slate-600 hover:text-sky-600">Roadmap</a>
+            </div>
+        </nav>
+    </header>
+
+    <main class="container mx-auto px-6 py-8 md:py-12">
+
+        <!-- Introduction -->
+        <section class="text-center mb-16 md:mb-24">
+            <h2 class="text-4xl md:text-5xl font-bold text-slate-900 mb-4">AI-Driven Maritime Vessel Classification</h2>
+            <p class="max-w-3xl mx-auto text-lg text-slate-600">
+                An interactive exploration of the framework for classifying ships using satellite and radar data. This application translates a complex technical report into an intuitive journey, revealing how AI can provide unprecedented awareness of global maritime activity.
+            </p>
+        </section>
+
+        <!-- The Classification Challenge -->
+        <section id="challenge" class="mb-16 md:mb-24 scroll-mt-20">
+            <div class="text-center mb-12">
+                <h3 class="text-3xl font-bold text-slate-900">The Classification Challenge</h3>
+                <p class="max-w-2xl mx-auto text-slate-600 mt-2">
+                    What does "kind of ship" truly mean? The first step in any AI project is defining the target classes. In the maritime world, this is not one problem but several, each with its own logic. This section explores the different ways vessels are categorized, which is the foundational decision for building any classification model.
+                </p>
+            </div>
+            <div class="max-w-4xl mx-auto">
+                <div id="tabs-container" class="flex flex-wrap justify-center gap-2 md:gap-4 mb-8">
+                    <button data-tab="functional" class="tab-button px-4 py-2 text-sm md:text-base font-semibold border-2 border-transparent rounded-full transition-all duration-300">Functional & Commercial</button>
+                    <button data-tab="size" class="tab-button px-4 py-2 text-sm md:text-base font-semibold border-2 border-transparent rounded-full transition-all duration-300">Size-Based</button>
+                    <button data-tab="regulatory" class="tab-button px-4 py-2 text-sm md:text-base font-semibold border-2 border-transparent rounded-full transition-all duration-300">Regulatory & Specialized</button>
+                </div>
+                <div id="tabs-content" class="bg-white p-6 md:p-8 rounded-xl shadow-lg">
+                    <!-- Content will be injected by JS -->
+                </div>
+            </div>
+        </section>
+
+        <!-- Data Sources -->
+        <section id="data" class="mb-16 md:mb-24 scroll-mt-20">
+            <div class="text-center mb-12">
+                <h3 class="text-3xl font-bold text-slate-900">Data Sources: The Duality of Trust and Verification</h3>
+                <p class="max-w-3xl mx-auto text-slate-600 mt-2">
+                    A robust classification system relies on complementary data. This section contrasts the two primary sources: the Automatic Identification System (AIS) and Synthetic Aperture Radar (SAR). Understanding their strengths and weaknesses reveals why fusing them is the key to a comprehensive solution.
+                </p>
+            </div>
+            <div class="grid md:grid-cols-2 gap-8 max-w-5xl mx-auto">
+                <div class="bg-white rounded-xl shadow-lg p-8">
+                    <h4 class="text-2xl font-bold mb-4 text-sky-700">AIS: The Semantic Layer</h4>
+                    <p class="text-slate-600 mb-4">A cooperative, self-reporting system providing rich data like identity, dimensions, and course. It's the ground truth for cooperative vessels but relies on trust.</p>
+                    <ul class="space-y-2">
+                        <li class="flex items-start"><span class="text-green-500 mr-2">✔</span><div><strong class="font-semibold">Rich Data:</strong> Provides ship type, size, destination.</div></li>
+                        <li class="flex items-start"><span class="text-green-500 mr-2">✔</span><div><strong class="font-semibold">Real-Time:</strong> Dynamic info updated every 2-10 seconds.</div></li>
+                        <li class="flex items-start"><span class="text-red-500 mr-2">✖</span><div><strong class="font-semibold">Cooperative:</strong> Can be turned off, creating "dark vessels".</div></li>
+                        <li class="flex items-start"><span class="text-red-500 mr-2">✖</span><div><strong class="font-semibold">Vulnerable:</strong> Data can be noisy or deliberately falsified (spoofed).</div></li>
+                    </ul>
+                </div>
+                <div class="bg-white rounded-xl shadow-lg p-8">
+                    <h4 class="text-2xl font-bold mb-4 text-indigo-700">SAR: The Physical Verification Layer</h4>
+                    <p class="text-slate-600 mb-4">An active imaging sensor that provides physical evidence. It sees through clouds and darkness, detecting objects that don't want to be seen.</p>
+                     <ul class="space-y-2">
+                        <li class="flex items-start"><span class="text-green-500 mr-2">✔</span><div><strong class="font-semibold">All-Weather/24-7:</strong> Unaffected by darkness or clouds.</div></li>
+                        <li class="flex items-start"><span class="text-green-500 mr-2">✔</span><div><strong class="font-semibold">Detects Dark Vessels:</strong> Finds non-cooperative ships.</div></li>
+                        <li class="flex items-start"><span class="text-red-500 mr-2">✖</span><div><strong class="font-semibold">Requires Interpretation:</strong> A bright spot isn't a ship until proven.</div></li>
+                        <li class="flex items-start"><span class="text-red-500 mr-2">✖</span><div><strong class="font-semibold">Complex Data:</strong> Affected by speckle noise and background clutter.</div></li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- AI/ML Pipeline -->
+        <section id="pipeline" class="mb-16 md:mb-24 scroll-mt-20">
+            <div class="text-center mb-12">
+                <h3 class="text-3xl font-bold text-slate-900">The AI/ML Pipeline: From Raw Data to Actionable Insight</h3>
+                <p class="max-w-3xl mx-auto text-slate-600 mt-2">
+                    This interactive diagram illustrates the end-to-end process of transforming raw sensor data into a final ship classification. Click on each stage to understand its purpose and the techniques involved. This flow is the core logic of the AI system.
+                </p>
+            </div>
+            <div class="max-w-6xl mx-auto">
+                <div class="flex flex-col md:flex-row items-center justify-center space-y-4 md:space-y-0 md:space-x-4 text-center mb-8" id="pipeline-diagram">
+                    <div class="pipeline-stage bg-white p-4 rounded-lg shadow-md w-full md:w-1/4" data-pipeline="1">
+                        <div class="text-sky-500 text-3xl mb-2">📡</div>
+                        <h5 class="font-bold">1. Data Ingestion</h5>
+                        <p class="text-sm text-slate-500">AIS & SAR Streams</p>
+                    </div>
+                    <div class="text-2xl text-slate-400 hidden md:block">→</div>
+                    <div class="pipeline-stage bg-white p-4 rounded-lg shadow-md w-full md:w-1/4" data-pipeline="2">
+                        <div class="text-sky-500 text-3xl mb-2">🛠️</div>
+                        <h5 class="font-bold">2. Feature Engineering</h5>
+                        <p class="text-sm text-slate-500">Creating Model Inputs</p>
+                    </div>
+                    <div class="text-2xl text-slate-400 hidden md:block">→</div>
+                    <div class="pipeline-stage bg-white p-4 rounded-lg shadow-md w-full md:w-1/4" data-pipeline="3">
+                        <div class="text-sky-500 text-3xl mb-2">🧠</div>
+                        <h5 class="font-bold">3. Model Training</h5>
+                        <p class="text-sm text-slate-500">Learning Patterns</p>
+                    </div>
+                    <div class="text-2xl text-slate-400 hidden md:block">→</div>
+                    <div class="pipeline-stage bg-white p-4 rounded-lg shadow-md w-full md:w-1/4" data-pipeline="4">
+                        <div class="text-sky-500 text-3xl mb-2">🏷️</div>
+                        <h5 class="font-bold">4. Classification</h5>
+                        <p class="text-sm text-slate-500">Predicting Ship Type</p>
+                    </div>
+                </div>
+                <div id="pipeline-details" class="bg-white p-6 md:p-8 rounded-xl shadow-lg min-h-[150px]">
+                    <!-- Details will be injected by JS -->
+                </div>
+            </div>
+        </section>
+
+        <!-- Ship Explorer -->
+        <section id="explorer" class="mb-16 md:mb-24 scroll-mt-20">
+            <div class="text-center mb-12">
+                <h3 class="text-3xl font-bold text-slate-900">Interactive Ship Dimension Explorer</h3>
+                <p class="max-w-3xl mx-auto text-slate-600 mt-2">
+                    Visualizing data is key to understanding it. This chart plots the typical length and breadth of various ship classes from the report's reference table. Use the filters to explore how different vessel types compare in size and shape. Hover over points for specific details.
+                </p>
+            </div>
+            <div class="bg-white p-4 md:p-8 rounded-xl shadow-lg">
+                <div class="flex flex-wrap justify-center gap-2 mb-6" id="ship-filter-buttons">
+                    <!-- Filter buttons will be injected by JS -->
+                </div>
+                <div class="chart-container">
+                    <canvas id="shipExplorerChart"></canvas>
+                </div>
+            </div>
+        </section>
+
+        <!-- Performance -->
+        <section id="performance" class="mb-16 md:mb-24 scroll-mt-20">
+            <div class="text-center mb-12">
+                <h3 class="text-3xl font-bold text-slate-900">Model Performance Benchmarks</h3>
+                <p class="max-w-3xl mx-auto text-slate-600 mt-2">
+                    How well do these models actually work? This section visualizes the reported performance of different AI models from published case studies. It highlights that the choice of model and input data dramatically affects accuracy, with tree-based models excelling at tabular AIS data.
+                </p>
+            </div>
+             <div class="bg-white p-4 md:p-8 rounded-xl shadow-lg max-w-4xl mx-auto">
+                <div class="chart-container h-96 md:h-[450px]">
+                    <canvas id="performanceChart"></canvas>
+                </div>
+            </div>
+        </section>
+
+        <!-- Roadmap -->
+        <section id="roadmap" class="scroll-mt-20">
+            <div class="text-center mb-12">
+                <h3 class="text-3xl font-bold text-slate-900">Strategic Implementation Roadmap</h3>
+                <p class="max-w-3xl mx-auto text-slate-600 mt-2">
+                    Building a comprehensive system is a journey, not a single step. The report proposes a phased approach to manage complexity and deliver value incrementally. This roadmap outlines the path from a simple baseline model to a state-of-the-art, multi-modal fusion system.
+                </p>
+            </div>
+            <div class="max-w-4xl mx-auto space-y-8">
+                <div class="flex items-start space-x-6">
+                    <div class="flex-shrink-0 w-12 h-12 bg-sky-500 text-white flex items-center justify-center rounded-full font-bold text-xl">1</div>
+                    <div>
+                        <h4 class="text-xl font-bold mb-1">Phase 1: AIS-Based Baseline Model</h4>
+                        <p class="text-slate-600">Quickly establish a strong performance baseline using readily available AIS data. This involves classifying vessels by size and self-reported type using an XGBoost or Random Forest model on engineered tabular features. The goal is a high-performing classifier for cooperative vessels.</p>
+                    </div>
+                </div>
+                <div class="flex items-start space-x-6">
+                    <div class="flex-shrink-0 w-12 h-12 bg-sky-600 text-white flex items-center justify-center rounded-full font-bold text-xl">2</div>
+                    <div>
+                        <h4 class="text-xl font-bold mb-1">Phase 2: SAR-Based Detection & Classification</h4>
+                        <p class="text-slate-600">Develop the capability to find and classify "dark vessels" from SAR imagery. Using public datasets and a fine-tuned CNN model (like VGG-16 or ResNet), this phase focuses on providing classification when AIS is absent or untrustworthy.</p>
+                    </div>
+                </div>
+                <div class="flex items-start space-x-6">
+                    <div class="flex-shrink-0 w-12 h-12 bg-sky-700 text-white flex items-center justify-center rounded-full font-bold text-xl">3</div>
+                    <div>
+                        <h4 class="text-xl font-bold mb-1">Phase 3: Fused Multi-Modal System</h4>
+                        <p class="text-slate-600">Integrate the AIS and SAR pipelines into a single, state-of-the-art system. This involves a multi-branch deep learning model that fuses visual, tabular, and trajectory data to provide a single, verified classification for every detected object, achieving maximum reliability.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="bg-slate-800 text-slate-400 mt-16 md:mt-24">
+        <div class="container mx-auto px-6 py-8 text-center">
+            <p>This interactive application was generated based on the "Framework for AI-Driven Maritime Vessel Classification" report.</p>
+            <p class="text-sm mt-2">All data is sourced from the provided document for illustrative purposes.</p>
+        </div>
+    </footer>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    
+    // --- Data from Report ---
+    const classificationTabsData = {
+        functional: {
+            title: 'Functional & Commercial Taxonomy',
+            content: `This is the most intuitive classification, categorizing vessels by their job. Key types include:
+            <ul class='list-disc list-inside mt-4 space-y-2 text-slate-600'>
+                <li><strong>Tankers:</strong> For bulk liquids (oil, chemicals), often with double hulls for safety.</li>
+                <li><strong>Container Ships:</strong> Carry standardized containers, capacity measured in TEU.</li>
+                <li><strong>Bulk Carriers:</strong> Transport unpackaged dry cargo like ore, grain, and coal.</li>
+                <li><strong>Passenger Ships:</strong> From large cruise liners to smaller ferries, carrying more than 12 passengers.</li>
+                <li><strong>Fishing Vessels:</strong> A highly diverse category, from small canoes to large factory trawlers.</li>
+            </ul>`
+        },
+        size: {
+            title: 'Size-Based Classifications',
+            content: `These classifications are hard physical constraints dictating which ports and canals a vessel can access.
+            <ul class='list-disc list-inside mt-4 space-y-2 text-slate-600'>
+                <li><strong>Panamax/Neopanamax:</strong> Sized to fit the original and new Panama Canal locks, respectively.</li>
+                <li><strong>Suezmax:</strong> The largest ship size that can transit the Suez Canal.</li>
+                <li><strong>Capesize:</strong> Very large vessels that are too big for either canal and must go around Cape Horn or the Cape of Good Hope.</li>
+                <li><strong>VLCC/ULCC:</strong> Very Large and Ultra Large Crude Carriers, the world's biggest supertankers.</li>
+            </ul>`
+        },
+        regulatory: {
+            title: 'Regulatory & Specialized Classifications',
+            content: `These categories are often mandated by international law or are specific to a vessel's mission.
+            <ul class='list-disc list-inside mt-4 space-y-2 text-slate-600'>
+                <li><strong>IMDG Code:</strong> Classifies the hazardous nature of a ship's *cargo*, which dictates handling procedures.</li>
+                <li><strong>IMO Chemical Tanker Types:</strong> A structural classification (Type 1, 2, 3) based on the danger of the chemicals a tanker is built to carry.</li>
+                <li><strong>Military Vessels:</strong> A separate system based on combat role, including Aircraft Carriers, Destroyers, Cruisers, and Submarines.</li>
+            </ul>`
+        }
+    };
+
+    const pipelineDetailsData = {
+        1: {
+            title: 'Stage 1: Data Ingestion',
+            content: 'The pipeline begins with collecting raw data streams. This includes real-time and historical AIS messages from both terrestrial and satellite receivers, as well as high-resolution SAR imagery from satellite constellations. This raw data is the fuel for the entire AI system.'
+        },
+        2: {
+            title: 'Stage 2: Feature Engineering',
+            content: 'Raw data is rarely useful to a model directly. This stage transforms it into structured features. For AIS, this means extracting length and breadth, calculating aspect ratios, and analyzing kinematic behavior (speed, rate of turn). For SAR, it involves detecting ship pixels and estimating physical dimensions from the image.'
+        },
+        3: {
+            title: 'Stage 3: Model Training',
+            content: 'This is where the AI learns. The engineered features and corresponding labels (known ship types) are fed into a machine learning model. For tabular AIS data, models like XGBoost are effective. For SAR images, Convolutional Neural Networks (CNNs) are used. The model adjusts its internal parameters to find the patterns that link the features to the correct classification.'
+        },
+        4: {
+            title: 'Stage 4: Classification',
+            content: 'Once trained, the model is ready for deployment. It takes in the features of a new, unseen vessel and outputs a predicted classification (e.g., "Tanker," "Capesize"). A multi-modal fusion model would take in both AIS and SAR features simultaneously to make a more reliable and verified prediction.'
+        }
+    };
+
+    const shipData = [
+        { class: 'Bulk Carrier', subClass: 'Handymax', length: 175, breadth: 31 },
+        { class: 'Bulk Carrier', subClass: 'Panamax', length: 294, breadth: 32.3 },
+        { class: 'Bulk Carrier', subClass: 'Capesize', length: 290, breadth: 45 },
+        { class: 'Bulk Carrier', subClass: 'Chinamax', length: 360, breadth: 65 },
+        { class: 'Tanker', subClass: 'Aframax', length: 225, breadth: 38 },
+        { class: 'Tanker', subClass: 'Suezmax', length: 275, breadth: 50 },
+        { class: 'Tanker', subClass: 'VLCC', length: 315, breadth: 58 },
+        { class: 'Tanker', subClass: 'ULCC', length: 410, breadth: 68 },
+        { class: 'Container Ship', subClass: 'Panamax', length: 225, breadth: 32.2 },
+        { class: 'Container Ship', subClass: 'Neopanamax', length: 366, breadth: 49 },
+        { class: 'Container Ship', subClass: 'ULCS', length: 400, breadth: 61 },
+        { class: 'Passenger Ship', subClass: 'River Cruise', length: 110, breadth: 13.5 },
+        { class: 'Passenger Ship', subClass: 'Ocean (Avg)', length: 305, breadth: 61 },
+        { class: 'Passenger Ship', subClass: 'Ocean (Largest)', length: 365, breadth: 66 },
+        { class: 'Fishing Vessel', subClass: 'Purse Seiner', length: 20, breadth: 6 },
+        { class: 'Fishing Vessel', subClass: 'Longliner', length: 52, breadth: 12.5 },
+        { class: 'Fishing Vessel', subClass: 'Factory Trawler', length: 135, breadth: 20 },
+        { class: 'Naval Vessel', subClass: 'LCS', length: 115, breadth: 17.5 },
+        { class: 'Naval Vessel', subClass: 'Destroyer', length: 156, breadth: 20 },
+        { class: 'Naval Vessel', subClass: 'Cruiser', length: 173, breadth: 16.8 },
+        { class: 'Naval Vessel', subClass: 'Amphib. Assault', length: 257, breadth: 32 },
+        { class: 'Naval Vessel', subClass: 'Aircraft Carrier', length: 333, breadth: 77 },
+    ];
+
+    const performanceData = {
+        labels: ['XGBoost (AIS)', 'Random Forest (AIS)', 'CNN (Optical)', 'CNN+kNN (Optical)', 'RF (Trajectory)'],
+        datasets: [{
+            label: 'Reported Accuracy (%)',
+            data: [96.4, 96.3, 88.2, 86.5, 84.1],
+            backgroundColor: [
+                'rgba(14, 165, 233, 0.6)',
+                'rgba(59, 130, 246, 0.6)',
+                'rgba(107, 114, 128, 0.6)',
+                'rgba(139, 92, 246, 0.6)',
+                'rgba(234, 179, 8, 0.6)',
+            ],
+            borderColor: [
+                'rgba(14, 165, 233, 1)',
+                'rgba(59, 130, 246, 1)',
+                'rgba(107, 114, 128, 1)',
+                'rgba(139, 92, 246, 1)',
+                'rgba(234, 179, 8, 1)',
+            ],
+            borderWidth: 1
+        }]
+    };
+
+    // --- Classification Tabs ---
+    const tabsContainer = document.getElementById('tabs-container');
+    const tabsContent = document.getElementById('tabs-content');
+    
+    tabsContainer.addEventListener('click', (e) => {
+        if (e.target.matches('.tab-button')) {
+            const tabId = e.target.dataset.tab;
+            updateTabContent(tabId);
+        }
+    });
+
+    function updateTabContent(tabId) {
+        const data = classificationTabsData[tabId];
+        tabsContent.innerHTML = `<h4 class="text-2xl font-bold mb-4">${data.title}</h4><p class="text-slate-700">${data.content}</p>`;
+        
+        tabsContainer.querySelectorAll('.tab-button').forEach(btn => {
+            btn.classList.toggle('active', btn.dataset.tab === tabId);
+        });
+    }
+
+    // --- Pipeline Diagram ---
+    const pipelineDiagram = document.getElementById('pipeline-diagram');
+    const pipelineDetails = document.getElementById('pipeline-details');
+
+    pipelineDiagram.addEventListener('click', (e) => {
+        const stage = e.target.closest('.pipeline-stage');
+        if (stage) {
+            const stageId = stage.dataset.pipeline;
+            updatePipelineDetails(stageId);
+        }
+    });
+
+    function updatePipelineDetails(stageId) {
+        const data = pipelineDetailsData[stageId];
+        pipelineDetails.innerHTML = `<h5 class="font-bold text-xl mb-2">${data.title}</h5><p class="text-slate-600">${data.content}</p>`;
+
+        pipelineDiagram.querySelectorAll('.pipeline-stage').forEach(s => {
+            s.classList.toggle('active', s.dataset.pipeline === stageId);
+        });
+    }
+
+    // --- Ship Explorer Chart ---
+    const shipClasses = ['All', ...new Set(shipData.map(s => s.class))];
+    const filterContainer = document.getElementById('ship-filter-buttons');
+    
+    shipClasses.forEach(c => {
+        const button = document.createElement('button');
+        button.textContent = c;
+        button.dataset.filter = c;
+        button.className = 'tab-button px-3 py-1.5 text-sm font-semibold border-2 border-transparent rounded-full transition-all duration-300';
+        filterContainer.appendChild(button);
+    });
+
+    const shipCtx = document.getElementById('shipExplorerChart').getContext('2d');
+    const shipExplorerChart = new Chart(shipCtx, {
+        type: 'scatter',
+        data: {
+            datasets: []
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                x: {
+                    title: {
+                        display: true,
+                        text: 'Length (m)',
+                        font: { size: 14 }
+                    }
+                },
+                y: {
+                    title: {
+                        display: true,
+                        text: 'Breadth (m)',
+                        font: { size: 14 }
+                    }
+                }
+            },
+            plugins: {
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            const d = context.raw;
+                            return `${d.subClass} (${d.class}): ${d.x}m x ${d.y}m`;
+                        }
+                    }
+                },
+                legend: {
+                    position: 'bottom',
+                }
+            }
+        }
+    });
+
+    function updateShipChart(filter = 'All') {
+        let filteredData = filter === 'All' ? shipData : shipData.filter(s => s.class === filter);
+        
+        const datasets = {};
+        filteredData.forEach(ship => {
+            if (!datasets[ship.class]) {
+                datasets[ship.class] = {
+                    label: ship.class,
+                    data: [],
+                    backgroundColor: getShipColor(ship.class),
+                    pointRadius: 6,
+                    pointHoverRadius: 9,
+                };
+            }
+            datasets[ship.class].data.push({
+                x: ship.length,
+                y: ship.breadth,
+                class: ship.class,
+                subClass: ship.subClass
+            });
+        });
+
+        shipExplorerChart.data.datasets = Object.values(datasets);
+        shipExplorerChart.update();
+
+        filterContainer.querySelectorAll('button').forEach(btn => {
+            btn.classList.toggle('active', btn.dataset.filter === filter);
+        });
+    }
+    
+    function getShipColor(shipClass) {
+        const colors = {
+            'Bulk Carrier': 'rgba(234, 179, 8, 0.7)', // amber
+            'Tanker': 'rgba(139, 92, 246, 0.7)', // violet
+            'Container Ship': 'rgba(14, 165, 233, 0.7)', // sky
+            'Passenger Ship': 'rgba(236, 72, 153, 0.7)', // pink
+            'Fishing Vessel': 'rgba(34, 197, 94, 0.7)', // green
+            'Naval Vessel': 'rgba(239, 68, 68, 0.7)', // red
+        };
+        return colors[shipClass] || 'rgba(107, 114, 128, 0.7)'; // gray
+    }
+
+    filterContainer.addEventListener('click', e => {
+        if (e.target.matches('button')) {
+            updateShipChart(e.target.dataset.filter);
+        }
+    });
+
+    // --- Performance Chart ---
+    const perfCtx = document.getElementById('performanceChart').getContext('2d');
+    new Chart(perfCtx, {
+        type: 'bar',
+        data: performanceData,
+        options: {
+            indexAxis: 'y',
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                x: {
+                    beginAtZero: true,
+                    max: 100,
+                    title: {
+                        display: true,
+                        text: 'Reported Accuracy (%)'
+                    }
+                }
+            },
+            plugins: {
+                legend: {
+                    display: false
+                },
+                title: {
+                    display: true,
+                    text: 'Model Performance on Different Data Types'
+                }
+            }
+        }
+    });
+
+    // --- Active Nav Link Scrolling ---
+    const sections = document.querySelectorAll('section');
+    const navLinks = document.querySelectorAll('.nav-link');
+
+    window.addEventListener('scroll', () => {
+        let current = '';
+        sections.forEach(section => {
+            const sectionTop = section.offsetTop;
+            if (pageYOffset >= sectionTop - 80) {
+                current = section.getAttribute('id');
+            }
+        });
+
+        navLinks.forEach(link => {
+            link.classList.remove('active');
+            if (link.getAttribute('href').includes(current)) {
+                link.classList.add('active');
+            }
+        });
+    });
+
+    // --- Initializations ---
+    updateTabContent('functional');
+    updatePipelineDetails('1');
+    updateShipChart('All');
+});
+</script>
+
+</body>
+</html>
